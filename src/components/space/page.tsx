@@ -14,7 +14,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Rocket, Wallet, Target, Users, Zap, Star } from "lucide-react"
 import { useSpaceProgram, useSpaceProgramAccount } from "./space-data-access"
@@ -214,7 +213,7 @@ function CampaignCard({
   setSelectedCampaign: (pk: PublicKey) => void
   setDonationAmount: (amt: string) => void
 }) {
-  const { accountQuery, donateCampaign, withdrawCampaign } = useSpaceProgramAccount({ account })
+  const { accountQuery, withdrawCampaign } = useSpaceProgramAccount({ account })
   const [donateLoading, setDonateLoading] = useState(false)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
 
@@ -283,6 +282,7 @@ function CampaignCard({
               onClick={() => {
                 setSelectedCampaign(account)
                 setDonationAmount("")
+                setDonateLoading(false)
               }}
               disabled={donateLoading}
             >
@@ -298,7 +298,7 @@ function CampaignCard({
                 try {
                   await withdrawCampaign.mutateAsync()
                 } catch (e) {
-                  // handle error
+                  console.log("Error during withdraw: ", e)
                 }
                 setWithdrawLoading(false)
               }}
@@ -340,7 +340,7 @@ function DonationDialog({
       await accountQuery.refetch() // <-- Refetch campaign data after donation
       onOpenChange(false)
     } catch (e) {
-      // handle error
+      console.log("Error while donating: ", e);
     }
     setLoading(false)
   }

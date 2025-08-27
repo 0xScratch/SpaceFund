@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client'
 
 import { getSpaceProgram, getSpaceProgramId } from '@/lib'
@@ -48,6 +50,8 @@ export function useSpaceProgram() {
                 programId
             );
 
+            console.log(campaignEntryAddress);
+
             return program.methods.createCampaign(title, description, goal).rpc();
         },
         onSuccess: (signature) => {
@@ -74,9 +78,6 @@ export function useSpaceProgramAccount({ account }: { account: PublicKey }) {
     const transactionToast = useTransactionToast()
     const { program, accounts } = useSpaceProgram()
     const provider = useAnchorProvider()
-    const programId = new PublicKey(
-        "Ep1m1kNQVn45i2B2ntshHBy3cp2CKpGikmUpogAhmM7J"
-    );
 
     const accountQuery = useQuery({
         queryKey: ['space', 'fetch', { cluster, account }],

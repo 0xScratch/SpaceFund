@@ -4,7 +4,6 @@ import { PublicKey } from '@solana/web3.js'
 import { useState } from 'react'
 import { useSpaceProgram, useSpaceProgramAccount } from './space-data-access'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { ExplorerLink } from '../cluster/cluster-ui'
 import { ellipsify } from '@/lib/utils'
 import { BN } from '@coral-xyz/anchor'
 
