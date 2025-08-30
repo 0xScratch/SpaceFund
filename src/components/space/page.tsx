@@ -138,7 +138,7 @@ export default function SpaceCrowdfundingDapp() {
               </div>
               <Button
                 onClick={handleCreateCampaign}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 rounded-lg border border-primary/30 shadow-lg hover:shadow-primary/25 transition-all duration-300"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 rounded-lg border border-primary/30 shadow-lg hover:shadow-primary/25 transition-all duration-300 cursor-pointer"
                 disabled={createCampaign.isPending}
               >
                 <Rocket className="mr-2 h-4 w-4" />
@@ -278,7 +278,7 @@ function CampaignCard({
         <div className="flex gap-2">
           {!isCreator && publicKey && (
             <Button
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               onClick={() => {
                 setSelectedCampaign(account)
                 setDonationAmount("")
@@ -302,7 +302,7 @@ function CampaignCard({
                 }
                 setWithdrawLoading(false)
               }}
-              className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
+              className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground cursor-pointer"
               disabled={withdrawLoading}
             >
               <Wallet className="mr-2 h-4 w-4" />
@@ -371,7 +371,7 @@ function DonationDialog({
           </div>
           <Button
             onClick={handleDonate}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
             disabled={loading || !donationAmount || Number(donationAmount) <= 0}
           >
             <Zap className="mr-2 h-4 w-4" />
