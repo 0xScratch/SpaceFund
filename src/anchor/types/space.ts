@@ -14,6 +14,66 @@ export type Space = {
   },
   "instructions": [
     {
+      "name": "closeCampaign",
+      "discriminator": [
+        65,
+        49,
+        110,
+        7,
+        63,
+        238,
+        206,
+        77
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "spaceCampaign",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  97,
+                  99,
+                  101,
+                  95,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "space_campaign.title",
+                "account": "spaceCampaign"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "createCampaign",
       "discriminator": [
         111,
@@ -144,6 +204,35 @@ export type Space = {
           }
         },
         {
+          "name": "donation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  111,
+                  110,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "spaceCampaign"
+              },
+              {
+                "kind": "account",
+                "path": "donor"
+              }
+            ]
+          }
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
@@ -154,6 +243,96 @@ export type Space = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "refund",
+      "discriminator": [
+        2,
+        96,
+        183,
+        251,
+        63,
+        208,
+        46,
+        46
+      ],
+      "accounts": [
+        {
+          "name": "donor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "spaceCampaign",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  112,
+                  97,
+                  99,
+                  101,
+                  95,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "space_campaign.creator",
+                "account": "spaceCampaign"
+              },
+              {
+                "kind": "account",
+                "path": "space_campaign.title",
+                "account": "spaceCampaign"
+              }
+            ]
+          }
+        },
+        {
+          "name": "donation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  111,
+                  110,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "spaceCampaign"
+              },
+              {
+                "kind": "account",
+                "path": "donor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "withdraw",
@@ -218,6 +397,19 @@ export type Space = {
   ],
   "accounts": [
     {
+      "name": "donation",
+      "discriminator": [
+        189,
+        210,
+        54,
+        77,
+        216,
+        85,
+        7,
+        68
+      ]
+    },
+    {
       "name": "spaceCampaign",
       "discriminator": [
         220,
@@ -281,9 +473,49 @@ export type Space = {
       "code": 6009,
       "name": "campaignNotEnded",
       "msg": "Campaign has not ended yet"
+    },
+    {
+      "code": 6010,
+      "name": "campaignSucceeded",
+      "msg": "Campaign succeeded, no refunds allowed"
+    },
+    {
+      "code": 6011,
+      "name": "notDonor",
+      "msg": "Not the donor of this donation"
+    },
+    {
+      "code": 6012,
+      "name": "noDonation",
+      "msg": "No donation made"
+    },
+    {
+      "code": 6013,
+      "name": "cannotCloseCampaign",
+      "msg": "Campaign cannot be closed: funds remain or goal reached"
     }
   ],
   "types": [
+    {
+      "name": "donation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "campaign",
+            "type": "pubkey"
+          },
+          {
+            "name": "donor",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "spaceCampaign",
       "type": {

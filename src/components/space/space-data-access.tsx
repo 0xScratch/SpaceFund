@@ -85,6 +85,17 @@ export function useSpaceProgramAccount({ account }: { account: PublicKey }) {
         queryFn: () => program.account.spaceCampaign.fetch(account),
     })
 
+    const donor = provider.wallet.publicKey;
+    const donationPda = PublicKey.findProgramAddressSync(
+      [Buffer.from("donation"), account.toBuffer(), donor.toBuffer()],
+      program.programId
+    )[0];
+
+    const donationAccountQuery = useQuery({
+      queryKey: ['space', 'donation', { cluster, account, donor }],
+      queryFn: () => program.account.donation.fetch(donationPda),
+    })
+
     const donateCampaign = useMutation<string, Error, DonateCampaignArgs>({
         mutationKey: [`campaignEntry`, `donate`, { cluster }],
         mutationFn: async ({ amount }) => {
@@ -105,6 +116,27 @@ export function useSpaceProgramAccount({ account }: { account: PublicKey }) {
             toast.error(`Error donating to campaign: ${error.message}`);
         },
     });
+    
+    const refundDonation = useMutation({
+        mutationKey: [`campaignEntry`, `refund`, { cluster }],
+        mutationFn: async () => {
+            const donor = provider.wallet.publicKey;
+            const spaceCampaign = account;
+            const systemProgram = SystemProgram.programId;
+            return program.methods.refund().accounts({
+                donor: donor,
+                spaceCampaign: spaceCampaign,
+                systemProgram: systemProgram
+            } as any).rpc();
+        },
+        onSuccess: (signature) => {
+            transactionToast(signature);
+            accounts.refetch();
+        },
+        onError: (error) => {
+            toast.error(`Error refunding donation: ${error.message}`);
+        },
+    });
 
     const withdrawCampaign = useMutation({
         mutationKey: [`campaignEntry`, `withdraw`, { cluster }],
@@ -122,11 +154,38 @@ export function useSpaceProgramAccount({ account }: { account: PublicKey }) {
             transactionToast(tx);
             return accounts.refetch();
         },
+        onError: (error) => {
+            toast.error(`Error withdrawing funds: ${error.message}`);
+        },
+    });
+
+    const closeCampaign = useMutation({
+        mutationKey: [`campaignEntry`, `close`, { cluster }],
+        mutationFn: async () => {
+            const creator = provider.wallet.publicKey;
+            const spaceCampaign = account;
+            const systemProgram = SystemProgram.programId;
+            return program.methods.closeCampaign().accounts({
+                creator: creator,
+                spaceCampaign: spaceCampaign,
+                systemProgram: systemProgram
+            } as any).rpc();
+        },
+        onSuccess: (tx) => {
+            transactionToast(tx);
+            return accounts.refetch();
+        },
+        onError: (error) => {
+            toast.error(`Error closing campaign: ${error.message}`);
+        },
     });
 
     return {
         accountQuery,
+        donationAccountQuery,
         donateCampaign,
-        withdrawCampaign
+        refundDonation,
+        withdrawCampaign,
+        closeCampaign
     }
 }

@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Rocket, Wallet, Target, Users, Zap, Star, Clock, Hourglass } from "lucide-react"
+import { Rocket, Wallet, Target, Users, Zap, Star, Clock, Hourglass, RotateCcw, Trash2 } from "lucide-react"
 import { useSpaceProgram, useSpaceProgramAccount } from "./space-data-access"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { BN } from "@coral-xyz/anchor"
@@ -36,6 +36,8 @@ export default function SpaceCrowdfundingDapp() {
   })
   const [donationAmount, setDonationAmount] = useState("")
   const [selectedCampaign, setSelectedCampaign] = useState<PublicKey | null>(null)
+  // Track donation state per campaign and per donor
+  const [userDonations, setUserDonations] = useState<{ [campaignPk: string]: boolean }>({})
 
   // Create campaign handler
   const handleCreateCampaign = async () => {
@@ -207,15 +209,23 @@ export default function SpaceCrowdfundingDapp() {
             </div>
           ) : accounts.data?.length ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {accounts.data.map((account) => (
-                <CampaignCard
-                  key={account.publicKey.toString()}
-                  account={account.publicKey}
-                  publicKey={publicKey}
-                  setSelectedCampaign={setSelectedCampaign}
-                  setDonationAmount={setDonationAmount}
-                />
-              ))}
+              {accounts.data.map((account) => {
+                const campaignPk = account.publicKey.toString();
+                return (
+                  <CampaignCard
+                    key={campaignPk}
+                    account={account.publicKey}
+                    publicKey={publicKey}
+                    setSelectedCampaign={setSelectedCampaign}
+                    setDonationAmount={setDonationAmount}
+                    hasUserDonated={userDonations[campaignPk] || false}
+                    setHasUserDonated={(val: boolean) => setUserDonations(prev => ({
+                      ...prev,
+                      [campaignPk]: val
+                    }))}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-12">
@@ -238,6 +248,14 @@ export default function SpaceCrowdfundingDapp() {
           }}
           donationAmount={donationAmount}
           setDonationAmount={setDonationAmount}
+          onDonateSuccess={() => {
+            if (selectedCampaign) {
+              setUserDonations(prev => ({
+                ...prev,
+                [selectedCampaign.toString()]: true
+              }))
+            }
+          }}
         />
       )}
     </div>
@@ -250,21 +268,35 @@ function CampaignCard({
   publicKey,
   setSelectedCampaign,
   setDonationAmount,
+  hasUserDonated,
+  setHasUserDonated,
 }: {
   account: PublicKey
   publicKey: PublicKey | null
   setSelectedCampaign: (pk: PublicKey) => void
   setDonationAmount: (amt: string) => void
+  hasUserDonated: boolean
+  setHasUserDonated: (val: boolean) => void
 }) {
-  const { accountQuery, withdrawCampaign } = useSpaceProgramAccount({ account })
+  const { accountQuery, donationAccountQuery, refundDonation, withdrawCampaign, closeCampaign } = useSpaceProgramAccount({ account })
   const [donateLoading, setDonateLoading] = useState(false)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [reclaimLoading, setReclaimLoading] = useState(false)
+  const [closeLoading, setCloseLoading] = useState(false)
   const [now, setNow] = useState<number>(Date.now())
+  const [localRaised, setLocalRaised] = useState<number | null>(null);
+  const data = accountQuery.data;
+
+  useEffect(() => {
+    setLocalRaised(null);
+  }, [data?.raised]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  if (!data) return null
 
   function formatRemaining(ms: number) {
     if (ms <= 0) return "Ended"
@@ -287,10 +319,9 @@ function CampaignCard({
     )
   }
 
-  const data = accountQuery.data
-  if (!data) return null
 
-  const progressPercentage = Number(data.raised) / Number(data.goal) * 100
+  const raisedAmount = localRaised !== null ? localRaised : Number(data.raised);
+  const progressPercentage = raisedAmount / Number(data.goal) * 100;
   const isGoalReached = Number(data.raised) >= Number(data.goal)
   const isCreator = publicKey && data.creator.toString() === publicKey.toString()
   const endMs = new Date(data.endTime.toNumber() * 1000).getTime()
@@ -300,6 +331,8 @@ function CampaignCard({
 
   const endedNotFunded = isEnded && !isGoalReached
   const endedFunded = isEnded && isGoalReached
+
+  const canRefund = !(isEnded && isGoalReached)
 
   return (
     <Card className={`bg-card/80 backdrop-blur-sm border-border/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 ${
@@ -385,6 +418,35 @@ function CampaignCard({
             </Button>
           )}
 
+          {publicKey && !isCreator && hasUserDonated && (
+            <Button
+              onClick={async () => {
+                setReclaimLoading(true)
+                try {
+                  const refundAmount = donationAccountQuery.data?.amount?.toNumber() || 0;
+                  await refundDonation.mutateAsync();
+                  setHasUserDonated(false); // Immediately update state for this campaign
+                  setLocalRaised(raisedAmount - refundAmount); // Optimistic update
+                  await donationAccountQuery.refetch();
+                  await accountQuery.refetch();
+                  setLocalRaised(null); // Reset after refetch
+                } catch (e) {
+                  console.log("Error during reclaim: ", e)
+                }
+                setReclaimLoading(false);
+              }}
+              disabled={!canRefund}
+              className={`flex-1 ${
+                canRefund
+                  ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground cursor-pointer"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              <RotateCcw className="mr-2 h-4 w-4"/>
+              {reclaimLoading ? "Reclaiming..." : "Reclaim Donation"}
+            </Button>
+          )}
+
           {isCreator && isGoalReached && isEnded && (
             <Button
               onClick={async () => {
@@ -413,6 +475,24 @@ function CampaignCard({
               Withdraw after {timeLabel}
             </Button>
           )}
+
+          {isCreator && isEnded && !isGoalReached && Number(data.raised) === 0 && (
+            <Button
+              onClick={async () => {
+                setCloseLoading(true)
+                try {
+                  await closeCampaign.mutateAsync()
+                } catch (e) {
+                  console.log("Error during close: ", e)
+                }
+                setCloseLoading(false)
+              }} 
+              className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
+            >
+              <Trash2 className="mr-2 h-4 w-4"/>
+              {closeLoading ? "Closing..." : "Close Campaign"}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -420,19 +500,23 @@ function CampaignCard({
 }
 
 // Donation Dialog Component
+type DonationDialogProps = {
+  account: PublicKey;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  donationAmount: string;
+  setDonationAmount: (amt: string) => void;
+  onDonateSuccess?: () => void;
+}
+
 function DonationDialog({
   account,
   open,
   onOpenChange,
   donationAmount,
   setDonationAmount,
-}: {
-  account: PublicKey
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  donationAmount: string
-  setDonationAmount: (amt: string) => void
-}) {
+  onDonateSuccess,
+}: DonationDialogProps) {
   const { donateCampaign, accountQuery } = useSpaceProgramAccount({ account })
   const [loading, setLoading] = useState(false)
 
@@ -442,6 +526,7 @@ function DonationDialog({
     try {
       await donateCampaign.mutateAsync({ amount: new BN(Number(donationAmount) * LAMPORTS_PER_SOL) })
       await accountQuery.refetch() // <-- Refetch campaign data after donation
+      onDonateSuccess?.() // <-- update hasUserDonated in parent
       onOpenChange(false)
     } catch (e) {
       console.log("Error while donating: ", e);
