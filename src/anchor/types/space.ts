@@ -82,6 +82,10 @@ export type Space = {
         {
           "name": "goal",
           "type": "u64"
+        },
+        {
+          "name": "endTime",
+          "type": "i64"
         }
       ]
     },
@@ -262,6 +266,21 @@ export type Space = {
       "code": 6006,
       "name": "goalNotReached",
       "msg": "Goal not reached"
+    },
+    {
+      "code": 6007,
+      "name": "invalidEndTime",
+      "msg": "Invalid end time"
+    },
+    {
+      "code": 6008,
+      "name": "campaignEnded",
+      "msg": "Campaign has ended"
+    },
+    {
+      "code": 6009,
+      "name": "campaignNotEnded",
+      "msg": "Campaign has not ended yet"
     }
   ],
   "types": [
@@ -289,6 +308,10 @@ export type Space = {
           {
             "name": "raised",
             "type": "u64"
+          },
+          {
+            "name": "endTime",
+            "type": "i64"
           }
         ]
       }

@@ -1,11 +1,5 @@
-import SpaceCrowdfundingDapp from "@/components/space/page"
+import SpaceCrowdfundingDapp from "@/components/space/space-ui"
 
 export default function Home() {
   return <SpaceCrowdfundingDapp />
 }
-
-// import SpaceFeature from "@/components/space/space-feature";
-
-// export default function Home() {
-//   return <SpaceFeature />
-// }

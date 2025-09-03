@@ -17,6 +17,7 @@ interface CreateCampaignArgs {
     title: string,
     description: string,
     goal: BN,
+    end_time: BN,
     creator: PublicKey
 }
 
@@ -44,7 +45,7 @@ export function useSpaceProgram() {
 
     const createCampaign = useMutation<string, Error, CreateCampaignArgs>({
         mutationKey: [`campaignEntry`, `create`, { cluster }],
-        mutationFn: async ({ title, description, goal, creator }) => {
+        mutationFn: async ({ title, description, goal, end_time, creator }) => {
             const [campaignEntryAddress] = await PublicKey.findProgramAddressSync(
                 [Buffer.from("space_mission"), creator.toBuffer(), Buffer.from(title)],
                 programId
@@ -52,7 +53,7 @@ export function useSpaceProgram() {
 
             console.log(campaignEntryAddress);
 
-            return program.methods.createCampaign(title, description, goal).rpc();
+            return program.methods.createCampaign(title, description, goal, end_time).rpc();
         },
         onSuccess: (signature) => {
             transactionToast(signature);

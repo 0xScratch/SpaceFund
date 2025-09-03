@@ -76,6 +76,10 @@
         {
           "name": "goal",
           "type": "u64"
+        },
+        {
+          "name": "end_time",
+          "type": "i64"
         }
       ]
     },
@@ -256,6 +260,21 @@
       "code": 6006,
       "name": "GoalNotReached",
       "msg": "Goal not reached"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidEndTime",
+      "msg": "Invalid end time"
+    },
+    {
+      "code": 6008,
+      "name": "CampaignEnded",
+      "msg": "Campaign has ended"
+    },
+    {
+      "code": 6009,
+      "name": "CampaignNotEnded",
+      "msg": "Campaign has not ended yet"
     }
   ],
   "types": [
@@ -283,6 +302,10 @@
           {
             "name": "raised",
             "type": "u64"
+          },
+          {
+            "name": "end_time",
+            "type": "i64"
           }
         ]
       }
